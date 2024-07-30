@@ -5,7 +5,6 @@ using Platformer.Gameplay;
 using static Platformer.Core.Simulation;
 using Platformer.Model;
 using Platformer.Core;
-
 namespace Platformer.Mechanics
 {
     /// <summary>
@@ -42,6 +41,9 @@ namespace Platformer.Mechanics
 
         public Bounds Bounds => collider2d.bounds;
 
+        public GameObject Bullet;
+        private float LastShoot;
+
         void Awake()
         {
             health = GetComponent<Health>();
@@ -63,6 +65,11 @@ namespace Platformer.Mechanics
                     stopJump = true;
                     Schedule<PlayerStopJump>().player = this;
                 }
+                if(Input.GetKey(KeyCode.Space) && Time.time > LastShoot + 0.25f)
+                {
+                    Shoot();
+                    LastShoot = Time.time;
+                }
             }
             else
             {
@@ -71,7 +78,21 @@ namespace Platformer.Mechanics
             UpdateJumpState();
             base.Update();
         }
-
+        
+        private void Shoot()
+        {
+            Vector3 direction;
+            if(spriteRenderer.flipX)
+            {
+                direction = Vector2.left;
+            }
+            else
+            {
+                direction = Vector2.right;
+            }
+            GameObject bullet = Instantiate(Bullet, transform.position + direction, Quaternion.identity);
+            bullet.GetComponent<Bullet>().setDirection( direction );
+        }
         void UpdateJumpState()
         {
             jump = false;
@@ -136,6 +157,19 @@ namespace Platformer.Mechanics
             Jumping,
             InFlight,
             Landed
+        }
+
+        public void Hit ()
+        {
+            health.Decrement();
+            if (health.IsAlive)
+            {
+                audioSource.PlayOneShot(ouchAudio);
+            }
+            else
+            {
+                Schedule<PlayerDeath>();
+            }
         }
     }
 }
