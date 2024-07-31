@@ -20,8 +20,17 @@ namespace Platformer.Mechanics
         internal Collider2D _collider;
         internal AudioSource _audio;
         SpriteRenderer spriteRenderer;
-        public Health health;
+        public int health = 1;
         public Bounds Bounds => _collider.bounds;
+
+        // Shoots
+        public GameObject Bullet;
+        private float LastShoot;
+        private bool canMove = false;
+        public float lineDistance = 5;
+        public LayerMask layerPlayerMask;
+        public bool playerInRange;
+        private PlayerController player;
 
         void Awake()
         {
@@ -29,10 +38,13 @@ namespace Platformer.Mechanics
             _collider = GetComponent<Collider2D>();
             _audio = GetComponent<AudioSource>();
             spriteRenderer = GetComponent<SpriteRenderer>();
+            canMove = true;
+            player = FindObjectOfType<PlayerController>();
         }
 
         void OnCollisionEnter2D(Collision2D collision)
         {
+
             var player = collision.gameObject.GetComponent<PlayerController>();
             if (player != null)
             {
@@ -42,28 +54,40 @@ namespace Platformer.Mechanics
             }
         }
 
+        private void Shoot()
+        {
+            // shoot to direction of the player.
+            Vector3 direction = player.transform.position - transform.position;
+            direction.Normalize();
+            GameObject bullet = Instantiate(Bullet, transform.position + direction, Quaternion.identity);
+            bullet.GetComponent<Bullet>().setDirection(direction);
+        }
+
         void Update()
         {
-            if (path != null)
+            if (canMove && path != null)
             {
                 if (mover == null) mover = path.CreateMover(control.maxSpeed * 0.5f);
                 control.move.x = Mathf.Clamp(mover.Position.x - transform.position.x, -1, 1);
             }
+            playerInRange = Physics2D.Raycast(transform.position, -transform.right, lineDistance, layerPlayerMask);
+
+            if (playerInRange)
+            {
+                if (Time.time - LastShoot > 1f)
+                {
+                    Shoot();
+                    LastShoot = Time.time;
+                }
+            }else{
+                canMove = true;
+            }
         }
 
-        public void Hit ()
+        public void Hit()
         {
-            Debug.Log("Hit Enemy");
-            Debug.Log(health);
-            health.Decrement();
-            if (health.IsAlive)
-            {
-
-            }
-            else
-            {
-                Schedule<EnemyDeath>().enemy = this;
-            }
+            health--;
+            if (health <= 0) Schedule<EnemyDeath>().enemy = this;
         }
     }
 }
