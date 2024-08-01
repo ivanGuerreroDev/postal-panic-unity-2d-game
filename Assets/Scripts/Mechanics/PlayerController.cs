@@ -159,16 +159,13 @@ namespace Platformer.Mechanics
             Landed
         }
 
-        public void Hit ()
+        public void Hit (int damage = 1)
         {
-            health.Decrement();
             if (health.IsAlive)
             {
-                audioSource.PlayOneShot(ouchAudio);
-            }
-            else
-            {
-                Schedule<PlayerDeath>();
+                if (audioSource && ouchAudio)
+                    audioSource.PlayOneShot(ouchAudio);
+                    health.Decrement(damage);
             }
         }
     }

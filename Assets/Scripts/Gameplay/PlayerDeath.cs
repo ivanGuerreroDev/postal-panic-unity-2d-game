@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Platformer.Core;
 using Platformer.Model;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+
 
 namespace Platformer.Gameplay
 {
@@ -17,7 +19,7 @@ namespace Platformer.Gameplay
         public override void Execute()
         {
             var player = model.player;
-            if (player.health.IsAlive)
+            if (!player.health.IsAlive)
             {
                 player.health.Die();
                 model.virtualCamera.m_Follow = null;
@@ -29,7 +31,10 @@ namespace Platformer.Gameplay
                     player.audioSource.PlayOneShot(player.ouchAudio);
                 player.animator.SetTrigger("hurt");
                 player.animator.SetBool("dead", true);
-                Simulation.Schedule<PlayerSpawn>(2);
+                // restart scene and respanw player.
+                if (player.audioSource && player.respawnAudio)
+                    player.audioSource.PlayOneShot(player.respawnAudio);
+                Simulation.Schedule<PlayerSpawn>(4);
             }
         }
     }
